@@ -1,0 +1,7 @@
+node_modules/
+dist/
+target/
+.anchor/
+test-ledger/
+*.log
+bakeoff/target/deploy/bakeoff-keypair.json

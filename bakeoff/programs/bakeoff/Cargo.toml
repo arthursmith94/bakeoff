@@ -1,0 +1,20 @@
+[package]
+name = "bakeoff"
+version = "0.1.0"
+description = "On-chain cookie clicker for Cookie Chain. Upgrades fund the community Cookie Jar."
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "bakeoff"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = "0.31.1"
