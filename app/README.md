@@ -1,50 +1,93 @@
-# 🍪 Bakeoff — an on-chain cookie clicker on Cookie Chain
+# Bakeoff — on-chain Cookie Clicker for Cookie Chain
 
-Every batch of clicks is a **real Cookie Chain transaction**. Oven upgrades are paid in **COOK** straight
-into the community **Cookie Jar** (multisig Vault 1), so playing the game funds Cookie Chain builders.
-Built for the Superteam Earn *"Create an App on Cookie Chain"* bounty to show off what the chain is good at:
-sub-second finality and near-zero fees.
+Bakeoff is a cookie clicker where **every batch of clicks is a real transaction** on [Cookie Chain](https://docs.cookiechain.wtf) (an independent SVM chain, Solana-compatible). Your cookies, bakes and oven level live in an on-chain `Player` account; oven upgrades are paid in COOK straight into the community **Cookie Jar** vault, so playing funds Cookie Chain builders.
 
-**Live app:** _(deployed URL here)_ · **Program:** [`6GcyLhDfzZBHNpkiBaiWQbXamVoaGK9dcMxHh5DtcjQB`](https://cookiescan.io/account/6GcyLhDfzZBHNpkiBaiWQbXamVoaGK9dcMxHh5DtcjQB) · **Cookie Jar:** [`568tU9FMksJDxjkLBjWisSA4J4C5uPH87NCCkyREwrxe`](https://cookiescan.io/account/568tU9FMksJDxjkLBjWisSA4J4C5uPH87NCCkyREwrxe)
+- Program: [`6GcyLhDfzZBHNpkiBaiWQbXamVoaGK9dcMxHh5DtcjQB`](https://cookiescan.io/address/6GcyLhDfzZBHNpkiBaiWQbXamVoaGK9dcMxHh5DtcjQB) (Anchor, source in `../bakeoff`)
+- Cookie Jar vault: [`568tU9FMksJDxjkLBjWisSA4J4C5uPH87NCCkyREwrxe`](https://cookiescan.io/address/568tU9FMksJDxjkLBjWisSA4J4C5uPH87NCCkyREwrxe) (hard-coded in the program — nobody can redirect it)
+- No admin keys, no off-chain state. The leaderboard is `getProgramAccounts` over `Player` accounts.
 
-## What it does
-- **Connect Nightly** — auto-switches your wallet to the Cookie Chain network (via `changeNetwork` + genesis hash).
-- **Click to bake** — clicks are batched (25 or every 1.5 s) into one `bake` transaction so you feel the speed without spamming.
-- **Upgrade your oven** — each level multiplies cookies-per-click (Fibonacci curve) and transfers COOK to the Cookie Jar. Insufficient COOK? A "Bridge COOK" link points to the Hyperlane bridge.
-- **Global leaderboard** — read straight from on-chain `Player` accounts via `getProgramAccounts`.
-- **Live chain stats** — current slot, TPS, total bakes, bakers, and COOK donated to the Jar.
-- **Real feedback** — every tx shows pending → confirmed with an explorer link, and errors (wrong network, rejected, insufficient funds) are surfaced clearly.
+## Features
 
-## Required bounty features → where
-| Requirement | Implementation |
+| Area | What it does |
 |---|---|
-| Wallet connection (Nightly) | `src/useNightly.ts` |
-| Display connected address | header pill → account explorer |
-| Transaction execution | `bake`, `upgrade_oven`, `init_player` (`src/game.ts`) |
-| Confirmation handling | `confirmTransaction` + toasts (`src/App.tsx`) |
-| Error handling / user feedback | try/catch → error toasts; network + balance guards |
-| App-specific data & analytics | leaderboard + global stats bar |
-| Use existing Cookie Chain programs | System program transfers to the community Cookie Jar vault |
+| Wallet | Connects Nightly (or any Wallet Standard wallet) via `@solana/wallet-adapter`. Shows truncated address, live COOK balance, copy button and Cookiescan link. |
+| Network | After connecting Nightly, calls `window.nightly.solana.changeNetwork({ genesisHash, url })` to switch it to Cookie Chain, and shows a persistent banner with a one-click **Switch network** button. Detects when the RPC genesis differs from Cookie Chain (dev mode). |
+| Game loop | Clicks increment a local counter instantly and are flushed every 1.5 s or at 25 clicks as one `bake(n)` tx. First bake also runs `init_player` (and `init_global` if missing) in the same transaction — one signature. Only one tx in flight at a time, so a fast clicker never gets a storm of wallet popups. |
+| Confirmation handling | Each tx moves through signing → sent → confirmed with wall-clock latency (ms), landed slot and explorer link. Confirmation uses the blockhash/`lastValidBlockHeight` strategy. |
+| Error handling | Readable reasons for: user rejection, insufficient COOK (with a "Get COOK via bridge" link), blockhash expiry (one automatic retry, then manual), program errors decoded from the IDL, wrong network, RPC unreachable. **Clicks are never lost**: a failed batch keeps its click count and offers a retry that re-queues them. Balance is pre-checked before asking for a signature. |
+| Oven upgrades | Level, cookies-per-click multiplier, next cost (0.05 COOK × 2^level, max level 12, multipliers 1,2,3,5,8,13,21,34,55,89,144,233,377), disabled-with-reason states, celebration on success, explanation of the Cookie Jar. |
+| Leaderboard | All `Player` accounts sorted by cookies; rank, address (you highlighted), cookies, bakes, oven level. Refreshes every 10 s and after each of your transactions. Global stats from the `Global` PDA: total bakes, cookies, players, COOK sent to the Jar. |
+| Chain stats | Current slot (websocket subscription + polling fallback), TPS and average block time from `getRecentPerformanceSamples`. |
+| Session analytics | Clicks, txs sent/confirmed/failed, average/min/max confirmation latency, fees paid (5000 lamports × confirmed txs), clicks per tx, and an inline-SVG latency sparkline with hover. |
+| Quality | Pure CSS (no UI framework), responsive down to 400 px, keyboard accessible (the cookie is a real button: Space/Enter bake, hold Enter for rapid baking), reduced-motion support, TypeScript strict, no console errors. |
 
 ## Architecture
-- **Program:** Anchor 0.31 / Rust (`programs/bakeoff`). PDAs: `Global` (`["global"]`) and `Player` (`["player", owner]`). Instructions: `init_global`, `init_player`, `bake(n)`, `upgrade_oven`. No admin keys; the Cookie Jar address is a hard-coded constant checked on-chain. Overflow-checked, saturating arithmetic, events emitted.
-- **Frontend:** Vite + React + TypeScript, `@solana/web3.js` + `@coral-xyz/anchor`, direct Nightly injected provider. RPC `https://rpc.cookiescan.io`.
 
-## Run locally
-```bash
-# program (needs the Solana/Agave toolchain + Anchor 0.31)
-cd programs/.. && cargo build-sbf
-# frontend
-cd app && pnpm i && pnpm dev
 ```
-See `../DESIGN.md` for the full design and `../bakeoff` for the program. End-to-end test: `app/scripts/e2e.ts` (run against `solana-test-validator`).
-
-## Deploy
-```bash
-solana program deploy programs/bakeoff/target/deploy/bakeoff.so \
-  --program-id programs/bakeoff/target/deploy/bakeoff-keypair.json -u https://rpc.cookiescan.io
+src/
+  lib/bakeoff.ts     BakeoffClient — PDAs, reads (player/global/leaderboard), instruction builders,
+                     buildBakeTx / buildUpgradeTx, sendAndConfirm. Framework-free: the UI and the
+                     headless smoke test share this exact code.
+  lib/errors.ts      classifyError() — wallet / RPC / Anchor errors → {kind, title, detail, retryable, needsFunds}
+  lib/config.ts      chain constants, program id, game rules (mirrors the Rust program)
+  lib/env.ts         VITE_* env → RPC/WS/genesis (browser only)
+  hooks/useGame.ts   click queue, batching, retries, session stats, player state
+  hooks/useChainStats.ts, useBalance.ts, useLeaderboard.ts, useNightly.ts
+  components/        Header, NetworkBanner, CookieButton, TxFeed, OvenPanel, Leaderboard, Analytics, About
+  idl/bakeoff.json   Anchor IDL (generated by the program build; do not edit)
+scripts/
+  smoke.ts           headless smoke test of src/lib against a validator (bun)
+  e2e.ts             full instruction coverage of the program (bun)
 ```
-Requires a little COOK for rent/fees (deploy ≈ a few cents per the docs).
 
-## License
-MIT.
+Transactions are built with Anchor's `.instruction()` from a read-only provider and signed by whichever `TxSigner` is supplied: the wallet-adapter wallet in the browser, an `anchor.Wallet` keypair in scripts. Signing via `signTransaction` + `sendRawTransaction` (rather than the adapter's `sendTransaction`) means preflight failures carry program logs, which the error classifier uses.
+
+## Run
+
+```sh
+pnpm install
+pnpm dev            # http://localhost:5173, against Cookie Chain mainnet by default
+pnpm build          # tsc -b (strict) + vite build → dist/
+pnpm preview
+```
+
+### Local development against a test validator
+
+```sh
+# from ../bakeoff (needs the Solana toolchain)
+solana-test-validator --reset --bpf-program 6GcyLhDfzZBHNpkiBaiWQbXamVoaGK9dcMxHh5DtcjQB target/deploy/bakeoff.so
+
+# in app/
+VITE_RPC_URL=http://127.0.0.1:8899 VITE_WS_URL=ws://127.0.0.1:8900 pnpm dev
+pnpm smoke          # one bake + error classification + leaderboard, no browser (deployer keypair)
+```
+
+Nightly can be pointed at the local validator with the same **Switch network** button (it passes the local genesis hash and URL).
+
+### Environment variables
+
+| Var | Default | Purpose |
+|---|---|---|
+| `VITE_RPC_URL` | `https://rpc.cookiescan.io` | HTTP RPC endpoint |
+| `VITE_WS_URL` | `wss://wss.cookiescan.io` (unset for custom RPCs → derived by web3.js) | WebSocket endpoint for slot/account subscriptions |
+| `VITE_GENESIS_HASH` | `9wDaBRDgArEUpvhHxGguNkwozsZh4UpGZB9o2EoEcBB2` | Genesis hash passed to Nightly's `changeNetwork` |
+
+See `.env.example`.
+
+## Deploy (static)
+
+`pnpm build` produces a fully static `dist/` with a relative `base` (`./`), so it works from any path:
+
+- **GitHub Pages**: push `dist/` to a `gh-pages` branch (or use the `actions/upload-pages-artifact` action with `pnpm build`).
+- **Cloudflare Pages / Netlify / Vercel**: build command `pnpm build`, output directory `dist`.
+- Set `VITE_*` vars at build time only if you want a non-mainnet target.
+
+## Why Cookie Chain?
+
+A clicker is only honest if every click can afford to be on-chain. Cookie Chain confirms in a few hundred milliseconds and charges ~5000 lamports (≈ $0.000005) per signature, so Bakeoff keeps no off-chain score at all — the transaction feed *is* the game, and the latency numbers you see are the chain's real numbers. Deploying the program cost cents. That is the pitch of the chain, turned into something you can feel.
+
+## Notes
+
+- Bridge COOK from Solana at https://hyperlane.cookiescan.io (linked from every insufficient-funds error).
+- Program upgrade authority is retained during the contest window; see `../bakeoff/README.md`.
+- Source: https://github.com/REPLACE_ME/bakeoff

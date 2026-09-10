@@ -7,8 +7,9 @@ export function shortAddr(addr: string, n = 4): string {
 export function formatCook(lamports: number | bigint, maxFrac = 4): string {
   const n = Number(lamports) / LAMPORTS_PER_COOK
   if (n === 0) return '0'
-  if (Math.abs(n) < 0.0001) return n.toExponential(2)
-  return n.toLocaleString('en-US', { maximumFractionDigits: maxFrac })
+  // Tiny amounts (fees) get enough decimals to be readable: 0.00002 rather than 2e-5.
+  const frac = Math.abs(n) < 0.001 ? 9 : maxFrac
+  return n.toLocaleString('en-US', { maximumFractionDigits: frac })
 }
 
 export function formatInt(n: number | bigint): string {
