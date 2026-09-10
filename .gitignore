@@ -5,3 +5,13 @@ target/
 test-ledger/
 *.log
 bakeoff/target/deploy/bakeoff-keypair.json
+# internal working files (not for the public repo)
+DESIGN.md
+SUBMISSION.md
+SUBMIT_NOW.md
+TG_POST.md
+docs_full.md
+docs_index.md
+getting_started.md
+deploy.sh
+deploy-pipeline/
