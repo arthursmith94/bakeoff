@@ -1,5 +1,9 @@
 # Bakeoff — on-chain Cookie Clicker for Cookie Chain
 
+![Bakeoff demo](demo/bakeoff-demo.gif)
+
+*Live on Cookie Chain mainnet — every click and upgrade above is a real, confirmed transaction. [Play it](https://arthursmith94.github.io/bakeoff/).*
+
 Bakeoff is a cookie clicker where **every batch of clicks is a real transaction** on [Cookie Chain](https://docs.cookiechain.wtf) (an independent SVM chain, Solana-compatible). Your cookies, bakes and oven level live in an on-chain `Player` account; oven upgrades are paid in COOK straight into the community **Cookie Jar** vault, so playing funds Cookie Chain builders.
 
 - Program: [`6GcyLhDfzZBHNpkiBaiWQbXamVoaGK9dcMxHh5DtcjQB`](https://cookiescan.io/address/6GcyLhDfzZBHNpkiBaiWQbXamVoaGK9dcMxHh5DtcjQB) (Anchor, source in `../bakeoff`)

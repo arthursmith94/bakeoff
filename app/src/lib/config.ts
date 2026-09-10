@@ -4,7 +4,7 @@
 export const COOKIE_CHAIN = {
   name: 'Cookie Chain',
   rpc: 'https://rpc.cookiescan.io',
-  ws: 'wss://wss.cookiescan.io',
+  ws: 'wss://rpc.cookiescan.io',
   genesisHash: '9wDaBRDgArEUpvhHxGguNkwozsZh4UpGZB9o2EoEcBB2',
   explorer: 'https://cookiescan.io',
   bridge: 'https://hyperlane.cookiescan.io',
@@ -15,7 +15,7 @@ export const COOKIE_CHAIN = {
 
 export const PROGRAM_ID = '6GcyLhDfzZBHNpkiBaiWQbXamVoaGK9dcMxHh5DtcjQB'
 export const COOKIE_JAR = '568tU9FMksJDxjkLBjWisSA4J4C5uPH87NCCkyREwrxe'
-export const GITHUB_URL = 'https://github.com/REPLACE_ME/bakeoff'
+export const GITHUB_URL = 'https://github.com/arthursmith94/bakeoff'
 
 export const LAMPORTS_PER_COOK = 1_000_000_000
 /** Base fee per signature on Cookie Chain (same as Solana): 5000 lamports. */
